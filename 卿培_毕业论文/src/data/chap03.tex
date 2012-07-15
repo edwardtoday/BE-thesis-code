@@ -1,0 +1,141 @@
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 
+
+\cleardoublepage
+
+\chapter{解码器性能优化方案}
+\label{cha:optapproach}
+
+毕设工作的主体是解码器性能优化，本章主要介绍性能优化的一些准备工作并提出优化方案。
+
+\refsec{sec:platformdesc}介绍了实验所用的软硬件平台。\refsec{sec:decoderprofiling}介绍了对解码器进行性能分析的方法与结果，\refsec{sec:optapproach}以此为基础给出了性能优化的基本方案，最后在\refsec{sec:optaim}中说明了优化的目标。
+
+\section{软硬件平台说明}
+\label{sec:platformdesc}
+
+我们的解码器支持多种硬件平台，包括x86、CELL等处理器；多种操作系统，包括Linux和Windows。本文所做的优化如无特殊说明，皆与软硬件平台无关，可以直接在其他平台上应用。为了方便实验，实验主要在以下环境下进行：
+
+\begin{itemize}
+\item {硬件平台}
+
+\begin{itemize}
+\item Intel Core2 Quad Q9400 @ 2.66GHz
+	\footnote{禁止了SpeedStep功能}
+\item 4GB DDR2/800 Memory
+\item NVIDIA GeForce GTS 250 with 512MB
+\end{itemize}
+
+\item {软件平台}
+
+\begin{itemize}
+\item Microsoft Windows XP Professional SP3
+	\footnote{Lenovo ThinkCenter M6100T预装操作系统}
+\item NVIDIA WHQL Driver v197.13
+\item DirectX 9.0c
+\item Microsoft Visual Studio 2008 SP1
+	\footnote{获取自：\href{http://helpdesk.tsinghua.edu.cn/yhfw/yhfw_zbrj_tz.jsp}{清华大学校园正版软件服务}}
+\item CUDA SDK 3.0
+\item Intel VTune Performance Analyzer 9.1 Build 385
+	\footnote{30天评估版，序列号为VVVC-BDGCWFJC}
+\item Intel C++ Compiler Professional 11.1.038
+	\footnote{授权同VTune}
+\end{itemize}
+
+\end{itemize}
+
+
+\section{解码器性能分析}
+\label{sec:decoderprofiling}
+
+对解码器进行优化的过程中，首先需要对其现有的性能表现有一个细致的了解。对于每一个函数的被调用次数、运行时间、运行时间百分比等指标都需要有较为精确的测量，才能更好地进行接下来的优化。
+
+对此，我使用了两个性能分析工具来分析MVC Decoder工程。分别在接下来两节中说明。
+
+\subsection{VS2008内置性能分析}
+\label{subsec:vsprofiling}
+Visual Studio 2008 Team System版内置了一个Analyze功能，可以对目标程序进行性能分析。性能分析有两种：
+\begin{itemize}
+\item 一种是不改变编译结果，通过运行时采样，得到每个采样时刻正在运行的函数，经过汇总后得到函数在采样上的分布情况，由此估计每个函数运行时间占总运行时间的百分比。这种方式称为Sampling方式。
+\item 另一种是在编译时加入一些辅助代码，运行时通过这部分代码来标志进入和推出一个函数的时间，借助这些隐藏的输出信息得到总运行时间在各个函数内部的分布。这种方式称为Instrumental Code方式。
+\end{itemize}
+
+\subsubsection{性能分析步骤}
+\label{subsubsec:profilingprocess}
+
+在VS2008的菜单中有一个“Analyze”项，选择“New Performance Wizzard”打开一个性能分析向导。
+
+选择要分析的项目、分析的方式之后就可以开始分析了。
+
+成功执行植入了instrumental code的可执行程序之后，profiling工具收集到大量的数据。经过一段时间（在我的机器上大约两分钟）的处理，会给出一个性能分析报告。
+
+\subsubsection{性能分析结果}
+\label{subsubsec:reportexerpt}
+
+性能分析报告中的FunctionList视图给出了各个函数（包括系统调用）占用的时间、时间的百分比以及被调用次数等等数据。我们关心的是其中的“Exclusive Time”、“Number of Calls”两列。当然，“Exclusive Time \%”也被我们选中，因为百分比相对于毫秒数能让我们更直观地了解函数占用的时间。
+
+\input{data/vs10}
+
+分析报告中仅仅MVCDecoder.exe自身的函数就有近200条记录，而大部分都占用不足$0.05\%$的时间，优化价值不大。在\autoref{tab:vs10}中我们给出了时间占用排在前10的记录。更详细的记录参见\autoref{cha:expdatatable}中的\autoref{tab:vs50}。
+
+\subsection{VTune分析}
+\label{subsec:vtuneprofiling}
+
+在实验过程中，我们发现大部分函数运行总时间没有明显差别，与我们进行项目合作的北京世纪鼎点软件有限公司的罗翰先生指出，VS2008的性能分析可能不够准确，使用Intel的VTune或许能够得到更准确的性能分析结果。
+
+关于Intel VTune如何精确地进行性能分析，文\onlinecite{levinthal2007,levinthal2006,levinthal2008,levinthal2008a}中有介绍。
+
+\subsubsection{性能分析步骤}
+\label{subsubsec:profilingprocess}
+
+打开VTune Performance Analyzer之后，我们新建一个工程，选择采集call graph数据。配置好要运行的可执行文件和执行路径就可以开始分析了。与VS2008的分析一样，经过一段时间的执行和数据处理，我们获得一个性能分析报告。
+
+\subsubsection{性能分析结果}
+\label{subsubsec:reportexerpt}
+
+\input{data/vtune10}
+
+性能分析报告包含一个函数调用关系图以及函数运行时间表，我们关注的是后者。表中大部分列与VS2008的分析结果是公共的，比如函数名、总时间、净时间等等。我们采集了与此前同样意义的几列数据，包括“Function”，“Calls”，“Self Time”和“\% in function”。我们在\autoref{tab:vtune10}中给出前10条记录。更详细的记录参见\autoref{tab:vtune50}。
+
+
+\subsection{性能分析结果说明}
+\label{subsec:commentonreport}
+
+我们观察两个分析结果\autoref{tab:vs10}和\autoref{tab:vtune10}可以发现：虽然两个性能分析工具在结果上存在一些差别，但函数运行时间的排序大体上是一致的，耗时多的函数都排在表格靠上的位置，表中列出的前10位的函数有7个在两个表中都出现了。我们认为，可以根据性能分析的结果来确定函数优化的大体方向，优化的主要对象就是表中排在前列的函数。
+
+对这些函数进行进一步观察，我们可以将它们分类：
+\begin{description}
+\item[简单函数多次调用] 典型的例子是idct4x4\_c和iquant4x4\_c。这两个函数的调用次数都在5028960次，这仅仅是解码65帧两路视频所需要的次数。对于这类函数，哪怕是性能上的一点点提升，都会因为巨大的调用次数而对总解码时间产生较大的影响。
+\item[复杂函数] 典型的例子是macroblockGetHalfPel，这个函数仅仅执行148552次，单次执行时间是idct4x4c的14倍，iquant4x4c的53倍。这样的函数需要有很大幅度的优化才会在总时间中有所体现。
+\end{description}
+
+同时，我咨询了对整个系统十分熟悉的胡伟栋，他指出：耗时排在前列的函数大多是根据JMVC参考软件的逻辑来编写的，其考虑了一些工程上扩展的需要而非性能优先，因此有一定的提升空间。
+
+\section{优化方案}
+\label{sec:optapproach}
+
+在经过几次组会讨论之后，我们确定了如下的几个优化方案，分别对不同类型的函数进行重写逻辑、优化循环、汇编优化和CUDA优化。从重写逻辑开始，一步步优化解码器性能，直到符合优化目标（见\refsec{sec:optaim}）为止。
+
+\begin{description}
+\item[重写函数逻辑] 解码器中有一些函数的逻辑判断有多处重复，降低了性能。如果能够理清楚函数逻辑，修改函数内部执行的顺序，就能够加快一些速度。\\这样的优化在\refsec{sec:singlecorelogicopt}中有例子及说明。
+\item[循环的优化] 对帧和宏块的处理常常有两层for循环便利一个$width\times height$的像素矩阵，逐像素进行操作。对于这样的函数，首先考虑是否能够将多次循环内的操作合并到少量循环，再考虑循环结构对cache的友好程度。\\这样的优化在\refsec{sec:singlecoreloopopt}中有例子及说明。
+\item[汇编优化] 在项目讨论中，罗翰先生提出ffmpeg等开源的视频项目中可能会有一些变换的汇编优化版本，如果能够应用汇编优化，那么这些函数的性能将会有大幅度的提升。就此，我们考虑对一些函数进行汇编优化。\\ \refsec{sec:singlecoreasmopt}中进一步说明了汇编优化。
+\item[CUDA优化] 视频处理中很常见的就是并行性无处不在，解码器的调度器保证了帧解码具有一定的并行性，而对帧和宏块内部的处理往往还有可以并行的for循环逐像素操作，利用GPU的大量核心进行简单操作可以加快这类操作的速度。
+\end{description}
+
+\section{优化目标}
+\label{sec:optaim}
+
+我们进行MVC解码器优化的目标是为了能让普通用户使用PC作为终端能够收看3D视频。在显卡尚未内置MVC硬解码器的情况下，目前所有的解码任务都交给CPU来完成。我们将优化的目标设定在用户使用主流CPU能够进行两路标清视频\footnote{关于视频分辨率，有标清\href{http://en.wikipedia.org/wiki/Standard-definition_television}{SDTV}、增强型标清\href{http://en.wikipedia.org/wiki/Enhanced-definition_television}{EDTV}和高清\href{http://en.wikipedia.org/wiki/High-definition_television}{HDTV}等制式，我们所说的标清指的是国内广泛使用的\href{http://en.wikipedia.org/wiki/Enhanced-definition_television}{EDTV}中的\href{http://en.wikipedia.org/wiki/Phase_Alternating_Line}{PAL}制式视频，分辨率为$720\times576$。}的实时解码。
+
+量化的指标就是，用CPU进行两路分辨率为$720\times576$的视频，每一路都能达到30帧/秒，总计60fps的解码速率。
+
+达到上述目标之后，我们的解码器就能够用来在双目3D显示平台下开展实际应用了。如果想要使用我们同时拥有的Bolod生产的裸眼观看的3D电视，则需要输出8路信号。这在目前的CPU软解码算法上较难实现，目前有两种解决方案，一种是直接利用GPU加速解码过程，软解8路信号；另一种是CPU解码出2路信号，再用GPU通过2路立体信号合成出8路需要的信号。前一种方式已经在NVIDIA的蓝光播放器中应用了，不过其解决方案并不开源；后一种两路信号合成八路信号的项目，清华大学媒体所的李化常师兄正在进行中。在2010年3月已经实现了合成算法，将两帧画面合成出八帧大约耗时1秒，目前正在进行算法的优化工作。
+
+\section{小结}
+\label{sec:sum3}
+本章主要介绍了用Visual Studio内置的profiler以及Intel VTune对解码器进行性能分析的过程，给出了分析结果，列举了耗时最长的10个函数并对这些结果进行了一定的说明。针对性能分析结果，提出了优化方案，并明确了性能优化要达到的目标。
+
+

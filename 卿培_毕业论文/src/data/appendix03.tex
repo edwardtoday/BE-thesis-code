@@ -1,0 +1,311 @@
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 
+
+\cleardoublepage
+
+\chapter{实验中使用的部分代码和配置文件}
+\label{cha:sourcecode}
+
+%\begin{lstlisting}[caption = {idct8x8（C++实现）}, label = lst:idct8x8c++]
+%void idct8x8(int16 *piCoeff )
+%{
+%	Int aai[8][8];
+%	//Int n;
+%
+%	for(int n = 0; n < 8; ++n )
+%	{
+%		TCoeff* pi = piCoeff + (n << 3);
+%		Int     ai1[8];
+%		Int     ai2[8];
+%
+%		ai1[0] = pi[0] + pi[4];
+%		ai1[2] = pi[0] - pi[4];
+%
+%		ai1[4] = (pi[2]>>1) -  pi[6];
+%		ai1[6] =  pi[2]     + (pi[6]>>1);
+%
+%		ai1[1] = pi[5] - pi[3] - pi[7] - (pi[7]>>1);
+%		ai1[3] = pi[1] + pi[7] - pi[3] - (pi[3]>>1);;
+%		ai1[5] = pi[7] - pi[1] + pi[5] + (pi[5]>>1);
+%		ai1[7] = pi[3] + pi[5] + pi[1] + (pi[1]>>1);
+%
+%		ai2[0] = ai1[0] + ai1[6];
+%		ai2[6] = ai1[0] - ai1[6];
+%
+%		ai2[2] = ai1[2] + ai1[4];
+%		ai2[4] = ai1[2] - ai1[4];
+%
+%		ai2[1] = ai1[1] + (ai1[7]>>2);
+%		ai2[7] = ai1[7] - (ai1[1]>>2);
+%
+%		ai2[3] =  ai1[3]     + (ai1[5]>>2);
+%		ai2[5] = (ai1[3]>>2) -  ai1[5];
+%
+%		aai[n][0] = ai2[0] + ai2[7];
+%		aai[n][1] = ai2[2] + ai2[5];
+%		aai[n][2] = ai2[4] + ai2[3];
+%		aai[n][3] = ai2[6] + ai2[1];
+%		aai[n][4] = ai2[6] - ai2[1];
+%		aai[n][5] = ai2[4] - ai2[3];
+%		aai[n][6] = ai2[2] - ai2[5];
+%		aai[n][7] = ai2[0] - ai2[7];
+%	}
+%
+%	for(int n = 0; n < 8; ++n, ++piCoeff )
+%	{
+%		Int ai1[8];
+%		Int ai2[8];
+%
+%		ai1[0] =  aai[0][n] +  aai[4][n];
+%		ai1[1] =  aai[5][n] -  aai[3][n] - aai[7][n] - (aai[7][n]>>1);
+%		ai1[2] =  aai[0][n] -  aai[4][n];
+%		ai1[3] =  aai[1][n] +  aai[7][n] - aai[3][n] - (aai[3][n]>>1);
+%		ai1[4] = (aai[2][n]>>1) -  aai[6][n];
+%		ai1[5] =  aai[7][n] -  aai[1][n] + aai[5][n] + (aai[5][n]>>1);
+%		ai1[6] =  aai[2][n] + (aai[6][n]>>1);
+%		ai1[7] =  aai[3][n] +  aai[5][n] + aai[1][n] + (aai[1][n]>>1);
+%
+%		ai2[2] = ai1[2] + ai1[4];
+%		ai2[4] = ai1[2] - ai1[4];
+%
+%		ai2[0] = ai1[0] + ai1[6];
+%		ai2[6] = ai1[0] - ai1[6];
+%
+%		ai2[1] = ai1[1] + (ai1[7]>>2);
+%		ai2[7] = ai1[7] - (ai1[1]>>2);
+%
+%		ai2[3] =  ai1[3]     + (ai1[5]>>2);
+%		ai2[5] = (ai1[3]>>2) -  ai1[5];
+%
+%		piCoeff[0] = (ai2[0] + ai2[7] + 32) >> 6;
+%		piCoeff[8] = (ai2[2] + ai2[5] + 32) >> 6;
+%		piCoeff[16] = (ai2[4] + ai2[3] + 32) >> 6;
+%		piCoeff[24] = (ai2[6] + ai2[1] + 32) >> 6;
+%		piCoeff[32] = (ai2[6] - ai2[1] + 32) >> 6;
+%		piCoeff[40] = (ai2[4] - ai2[3] + 32) >> 6;
+%		piCoeff[48] = (ai2[2] - ai2[5] + 32) >> 6;
+%		piCoeff[56] = (ai2[0] - ai2[7] + 32) >> 6;
+%	}
+%}
+%\end{lstlisting}
+%
+%
+%\begin{lstlisting}[caption = {idct8x8（SSE2实现）}, label = lst:idct8x8sse2, language = {[x86masm]Assembler}]
+%;************************************************************************
+%;* SSE2-optimized H.264 iDCT
+%;************************************************************************
+%;* Copyright (C) 2003-2008 x264 project
+%;*
+%;* Authors: Laurent Aimar <fenrir@via.ecp.fr>
+%;*          Loren Merritt <lorenm@u.washington.edu>
+%;*          Holger Lubitz <hal@duncan.ol.sub.de>
+%;*          Min Chen <chenm001.163.com>
+%;*
+%;* This program is free software; you can redistribute it and/or modify
+%;* it under the terms of the GNU General Public License as published by
+%;* the Free Software Foundation; either version 2 of the License, or
+%;* (at your option) any later version.
+%;*
+%;* This program is distributed in the hope that it will be useful,
+%;* but WITHOUT ANY WARRANTY; without even the implied warranty of
+%;* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%;* GNU General Public License for more details.
+%;*
+%;* You should have received a copy of the GNU General Public License
+%;* along with this program; if not, write to the Free Software
+%;* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111, USA.
+%;************************************************************************
+%
+%%include "x86inc.asm"
+%%include "x86util.asm"
+%
+%SECTION_RODATA
+%pw_32: times 8 dw 32
+%
+%SECTION .text
+%
+%INIT_XMM
+%cglobal x264_add8x4_idct_sse2, 3,3,8
+%    movq   m0, [r1+ 0]
+%    movq   m1, [r1+ 8]
+%    movq   m2, [r1+16]
+%    movq   m3, [r1+24]
+%    movhps m0, [r1+32]
+%    movhps m1, [r1+40]
+%    movhps m2, [r1+48]
+%    movhps m3, [r1+56]
+%    IDCT4_1D 0,1,2,3,4,5
+%    TRANSPOSE2x4x4W 0,1,2,3,4
+%    paddw m0, [pw_32 GLOBAL]
+%    IDCT4_1D 0,1,2,3,4,5
+%    pxor  m7, m7
+%    STORE_DIFF  m0, m4, m7, [r0]
+%    STORE_DIFF  m1, m4, m7, [r0+r2]
+%    lea   r0, [r0+r2*2]
+%    STORE_DIFF  m2, m4, m7, [r0]
+%    STORE_DIFF  m3, m4, m7, [r0+r2]
+%    RET
+%\end{lstlisting}
+
+\begin{lstlisting}[caption = {JMVC编码八路视频配置文件样例}, label = lst:mvccfg, language = ]
+# MVC.cfg
+# JMVC Main Configuration File
+#=================== GENERAL ====================================
+InputFile            golf1  # input file
+OutputFile           golf1  # bitstream file
+ReconFile            g      # reconstructed file
+SourceWidth          320    # input  frame width
+SourceHeight         240    # input  frame height
+FrameRate            30.0   # frame rate [Hz]
+FramesToBeEncoded    623    # number of frames
+
+#=================== CODING =====================================
+SymbolMode           0      # 0=CAVLC, 1=CABAC
+FRExt                1      # 8x8 transform (0:off, 1:on)
+BasisQP              31     # Quantization parameters
+#=================== INTERLACED =================================
+MbAff                0      # 0=frameMb, 1=MbAff
+PAff                 0      # 0=frame, 1=field, 2=frame/field
+#=================== STRUCTURE ==================================
+GOPSize              4      # GOP Size (at maximum frame rate) 
+IntraPeriod          12     # Anchor Period
+NumberReferenceFrames 3     # Number of reference pictures
+InterPredPicsFirst   1      # 1 Inter Pics; 0 Inter-view Pics
+Log2MaxFrameNum      11     # specifies max. value for frame_num (4..16)
+Log2MaxPocLsb        7      # specifies coding of POC’s (4..15)
+DeltaLayer0Quant     0      # differential QP for layer 0
+DeltaLayer1Quant     3      # differential QP for layer 1
+DeltaLayer2Quant     4      # differential QP for layer 2
+DeltaLayer3Quant     5      # differential QP for layer 3
+DeltaLayer4Quant     6      # differential QP for layer 4
+DeltaLayer5Quant     7      # differential QP for layer 5
+MaxRefIdxActiveBL0   2      # active entries in ref list 0 for B slices
+MaxRefIdxActiveBL1   2      # active entries in ref list 1 for B slices
+MaxRefIdxActiveP     1      # active entries in ref list for P slices
+#=================== MOTION SEARCH ==============================
+SearchMode           4      # Search mode (0:BlockSearch, 4:FastSearch)
+SearchFuncFullPel    3      # Search function full pel
+                            #   (0:SAD, 1:SSE, 2:HADAMARD, 3:SAD-YUV) 
+SearchFuncSubPel     2      # Search function sub pel
+                            #   (0:SAD, 1:SSE, 2:HADAMARD) 
+SearchRange          32     # Search range (Full Pel)
+BiPredIter           4      # Max iterations for bi-pred search
+IterSearchRange      8      # Search range for iterations (0: normal)
+#=================== LOOP FILTER ================================
+LoopFilterDisable    0      # Loop filter idc (0: on, 1: off, 2:
+                            #   on except for slice boundaries)
+LoopFilterAlphaC0Offset 0   # AlphaOffset(-6..+6): valid range
+LoopFilterBetaOffset    0   # BetaOffset (-6..+6): valid range
+#=================== WEIGHTED PREDICTION ========================
+WeightedPrediction   0      # Weighting IP Slice (0:disable, 1:enable)
+WeightedBiprediction 0      # Weighting B  Slice (0:disable, 1:explicit,
+                                                  2:implicit)
+#=============== PARALLEL DECODING INFORMATION SEI Message ======
+PDISEIMessage        0      # PDI SEI message enable (0:disable,1:enable)
+PDIInitialDelayAnc   2      # PDI initial delay for anchor pictures
+PDIInitialDelayNonAnc 2     # PDI initial delay for non-anchor pictures
+#=================== NESTING SEI MESSAGE ========================
+NestingSEI           0      # (0: NestingSEI off, 1: NestingSEI on)
+SnapShot             0      # (0: SnapShot off, 1: SnapShot on)
+#=================== ACTIVE VIEW INFO SEI MESSAGE ===============
+ActiveViewSEI        0      # (0: ActiveViewSEI off, 1: ActiveViewSEI on)
+#=================== VIEW SCALABILITY INFOMATION SEI MESSAGE ====
+ViewScalInfoSEI      0      # (0: ViewScalSEI off, 1: ViewScalSEI on)
+#============== Level conformance checking of the DPB size ======
+DPBConformanceCheck  1      # (0: disable, 1: enable, 1:default) 
+#=================== MULTIVIEW CODING PARAMETERS ================
+NumViewsMinusOne     7      # (Number of view to be coded minus 1)
+ViewOrder 0-2-1-4-3-6-5-7   # (Order in which view_ids are coded)
+
+View_ID              0    # view_id (0..1024): valid range
+Fwd_NumAnchorRefs    0    # (number of list 0 references for anchor)
+Bwd_NumAnchorRefs    0    # (number of list 1 references for anchor)
+Fwd_NumNonAnchorRefs 0    # (number of list 0 references for non-anchor)
+Bwd_NumNonAnchorRefs 0    # (number of list 1 references for non-anchor)
+View_ID              1    # view_id (0..1024): valid range
+Fwd_NumAnchorRefs    1    # (number of list 0 references for anchor)
+Bwd_NumAnchorRefs    1    # (number of list 1 references for anchor)
+Fwd_NumNonAnchorRefs 1    # (number of list 0 references for non-anchor) 
+Bwd_NumNonAnchorRefs 1    # (number of list 1 references for non-anchor)
+Fwd_AnchorRefs       0 0  # ref_idx view_id combination
+Bwd_AnchorRefs       0 2  # ref_idx view_id combination
+Fwd_NonAnchorRefs    0 0  # ref_idx view_id combination
+Bwd_NonAnchorRefs    0 2  # ref_idx view_id combination
+
+View_ID              2
+Fwd_NumAnchorRefs    1
+Bwd_NumAnchorRefs    0
+Fwd_NumNonAnchorRefs 0
+Bwd_NumNonAnchorRefs 0
+Fwd_AnchorRefs       0 0
+View_ID              3
+Fwd_NumAnchorRefs    1
+Bwd_NumAnchorRefs    1
+Fwd_NumNonAnchorRefs 1
+Bwd_NumNonAnchorRefs 1
+Fwd_AnchorRefs       0 2
+Bwd_AnchorRefs       0 4
+Fwd_NonAnchorRefs    0 2
+Bwd_NonAnchorRefs    0 4
+
+View_ID              4
+Fwd_NumAnchorRefs    1
+Bwd_NumAnchorRefs    0
+Fwd_NumNonAnchorRefs 0
+Bwd_NumNonAnchorRefs 0
+Fwd_AnchorRefs       0 2
+View_ID              5
+Fwd_NumAnchorRefs    1
+Bwd_NumAnchorRefs    1
+Fwd_NumNonAnchorRefs 1
+Bwd_NumNonAnchorRefs 1
+Fwd_AnchorRefs       0 4
+Bwd_AnchorRefs       0 6
+Fwd_NonAnchorRefs    0 4
+Bwd_NonAnchorRefs    0 6
+
+View_ID              6
+Fwd_NumAnchorRefs    1
+Bwd_NumAnchorRefs    0
+Fwd_NumNonAnchorRefs 0
+Bwd_NumNonAnchorRefs 0
+Fwd_AnchorRefs       0 4
+View_ID              7
+Fwd_NumAnchorRefs    1
+Bwd_NumAnchorRefs    0
+Fwd_NumNonAnchorRefs 0
+Bwd_NumNonAnchorRefs 0
+Fwd_AnchorRefs       0 6
+\end{lstlisting}
+
+\begin{lstlisting}[caption = {JMVC打包八路视频配置文件样例}, label = lst:assemblercfg, language = ]
+# assembler.cfg
+#================== Assembler: View Encode order ===============
+OutputFile          golf623.mvc
+NumberOfViews       8
+InputFile0          golf1_0.264
+InputFile1          golf1_2.264
+InputFile2          golf1_1.264
+InputFile3          golf1_4.264
+InputFile4          golf1_3.264
+InputFile5          golf1_6.264
+InputFile6          golf1_5.264
+InputFile7          golf1_7.264
+\end{lstlisting}
+
+\begin{lstlisting}[caption = {JMVC打包八路视频脚本样例}, label = lst:batchEncode, language = ]
+H264AVCEncoderLibTestStatic.exe -vf MVC.cfg 0
+H264AVCEncoderLibTestStatic.exe -vf MVC.cfg 2
+H264AVCEncoderLibTestStatic.exe -vf MVC.cfg 1
+H264AVCEncoderLibTestStatic.exe -vf MVC.cfg 4
+H264AVCEncoderLibTestStatic.exe -vf MVC.cfg 3
+H264AVCEncoderLibTestStatic.exe -vf MVC.cfg 6
+H264AVCEncoderLibTestStatic.exe -vf MVC.cfg 5
+H264AVCEncoderLibTestStatic.exe -vf MVC.cfg 7
+MVCBitStreamAssemblerStatic.exe -vf assembler.cfg
+\end{lstlisting}
+
+%\cleardoublepage
