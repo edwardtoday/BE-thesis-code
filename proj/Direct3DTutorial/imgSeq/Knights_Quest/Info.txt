@@ -1,0 +1,15 @@
+Stream: Knights_Quest_576p.wmv
+Path: /Volumes/EDWARDTODAY/Knights_Quest_576p.wmv
+
+Duration: 0:01:44
+Data Size: 74.57 MB
+Bit Rate: 5.98 Mbps
+
+Video Tracks:
+Windows Media VC-1, 1440 × 576, 25 fps, 5.76 Mbps
+
+Audio Tracks:
+? stereo, 48 kHz, 214 kbps
+
+Stream Files:
+Knights_Quest_576p.wmv (74.57 MB)
